@@ -5,3 +5,10 @@ export enum ProductTCP {
   UPDATE = 'UPDATE_PRODUCT',
   DELETE = 'DELETE_PRODUCT',
 }
+
+export enum OrderTCP {
+  CREATE = 'createOrder',
+  FIND_ALL = 'findAllOrders',
+  FIND_ONE = 'findOneOrder',
+  CHANGE_ONE = 'changeOrderStatus',
+}

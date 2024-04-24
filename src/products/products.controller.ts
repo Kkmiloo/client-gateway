@@ -1,19 +1,21 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Inject,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PaginationDto, ProductTCP } from 'src/common';
 import { PRODUCT_SERVICE } from 'src/config';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -22,8 +24,11 @@ export class ProductsController {
   ) {}
 
   @Post()
-  createProduct() {
-    return 'Crea un producto';
+  createProduct(@Body() createProductDto: CreateProductDto) {
+    return this.productsClient.send(
+      { cmd: ProductTCP.CREATE },
+      createProductDto,
+    );
   }
 
   @Get()
@@ -43,17 +48,37 @@ export class ProductsController {
 
       return product;
     } catch (error) {
-      throw new BadRequestException(error);
+      throw new RpcException(error);
     }
   }
 
   @Delete(':id')
-  deleteProduct(@Param('id') id: string) {
-    return 'Borra el producto' + id;
+  async deleteProduct(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const product = await firstValueFrom(
+        this.productsClient.send({ cmd: ProductTCP.DELETE }, { id }),
+      );
+      return product;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   @Patch(':id')
-  updateProduct(@Param('id') id: string, @Body() body: any) {
-    return 'Esta funcion actualiza el producto' + id;
+  async updateProduct(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    try {
+      const product = await firstValueFrom(
+        this.productsClient.send(
+          { cmd: ProductTCP.FIND_ONE },
+          { id, ...updateProductDto },
+        ),
+      );
+      return product;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 }
